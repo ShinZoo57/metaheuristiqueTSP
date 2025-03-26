@@ -1,4 +1,4 @@
-package tsp.projects.fourmis;
+package tsp.autres.hillClimbing.fourmis;
 import tsp.evaluation.Coordinates;
 import tsp.evaluation.Evaluation;
 import tsp.evaluation.Path;
@@ -26,7 +26,8 @@ public class ColonieFourmis extends CompetitorProject {
     public ColonieFourmis(Evaluation evaluation) throws InvalidProjectException {
         super(evaluation);
         this.addAuthor("Mohamed Krouchi");
-        this.setMethodName("Colonie de Fourmis");
+        this.addAuthor("Emma Houver");
+        this.setMethodName("Colonie de fourmis");
         this.evaluation = evaluation;
         this.random = new Random();
     }

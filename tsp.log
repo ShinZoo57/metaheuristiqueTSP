@@ -1,10 +1,24 @@
 Évaluation des projets
 1 exécution
 60 secondes
-3 projets
+2 projets
 3 problèmes
 
-tsp.projects.fourmis.ColonieFourmis
-C:\Users\momo\Documents\mh_project\data\bier127	127557.11914434965
-C:\Users\momo\Documents\mh_project\data\gr666  	4224.968113712612
-C:\Users\momo\Documents\mh_project\data\pr2048 
+tsp.projects.fourmisGrasp.ColonieFourmisGRASP
+C:\Users\momo5\Desktop\M1\S8\Metaheuristique\metaheuristiqueTSP\data\bier127	120957.46570017612
+C:\Users\momo5\Desktop\M1\S8\Metaheuristique\metaheuristiqueTSP\data\gr666  	3342.499275112583
+C:\Users\momo5\Desktop\M1\S8\Metaheuristique\metaheuristiqueTSP\data\pr2048 	4095.2360679774997
+
+tsp.projects.demo.greedy.Greedy
+C:\Users\momo5\Desktop\M1\S8\Metaheuristique\metaheuristiqueTSP\data\bier127	133970.64577239772
+C:\Users\momo5\Desktop\M1\S8\Metaheuristique\metaheuristiqueTSP\data\gr666  	3835.215131467921
+C:\Users\momo5\Desktop\M1\S8\Metaheuristique\metaheuristiqueTSP\data\pr2048 	5116.0
+
+Projet Colonie de Fourmis + GRASP
+Mohamed Krouchi
+Évaluation: 0.0
+
+Projet Greedy
+Alexandre Blansché
+Évaluation: 16.808353557572563
+

@@ -1,4 +1,4 @@
-package tsp.projects.genetique;
+package tsp.autres.hillClimbing.genetique;
 
 import tsp.evaluation.Coordinates;
 import tsp.evaluation.Evaluation;
@@ -22,7 +22,8 @@ public class genetique extends CompetitorProject {
     public genetique(Evaluation evaluation) throws InvalidProjectException {
         super(evaluation);
         this.addAuthor("Mohamed Krouchi");
-        this.setMethodName("génétique amélioré");
+        this.addAuthor("Emma Houver");
+        this.setMethodName("Génétique");
     }
 
     @Override
