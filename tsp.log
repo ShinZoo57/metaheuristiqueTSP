@@ -4,21 +4,7 @@
 2 projets
 3 problèmes
 
-tsp.projects.fourmisGrasp.ColonieFourmisGRASP
-C:\Users\momo5\Desktop\M1\S8\Metaheuristique\metaheuristiqueTSP\data\bier127	120957.46570017612
-C:\Users\momo5\Desktop\M1\S8\Metaheuristique\metaheuristiqueTSP\data\gr666  	3342.499275112583
-C:\Users\momo5\Desktop\M1\S8\Metaheuristique\metaheuristiqueTSP\data\pr2048 	4095.2360679774997
-
-tsp.projects.demo.greedy.Greedy
-C:\Users\momo5\Desktop\M1\S8\Metaheuristique\metaheuristiqueTSP\data\bier127	133970.64577239772
-C:\Users\momo5\Desktop\M1\S8\Metaheuristique\metaheuristiqueTSP\data\gr666  	3835.215131467921
-C:\Users\momo5\Desktop\M1\S8\Metaheuristique\metaheuristiqueTSP\data\pr2048 	5116.0
-
-Projet Colonie de Fourmis + GRASP
-Mohamed Krouchi
-Évaluation: 0.0
-
-Projet Greedy
-Alexandre Blansché
-Évaluation: 16.808353557572563
-
+tsp.projects.fourmisGrasp.ColonieFourmis
+C:\Users\momo\Desktop\M1\S8\metaheuristique\metaheuristiqueTSP\data\bier127	119404.50434876975
+C:\Users\momo\Desktop\M1\S8\metaheuristique\metaheuristiqueTSP\data\gr666  	3294.2847422832906
+C:\Users\momo\Desktop\M1\S8\metaheuristique\metaheuristiqueTSP\data\pr2048 
