@@ -1,4 +1,4 @@
-package tsp.projects.fourmisGrasp;
+package tsp.projects.colonieFourmis;
 
 import tsp.evaluation.Coordinates;
 import tsp.evaluation.Evaluation;
@@ -9,24 +9,27 @@ import tsp.projects.InvalidProjectException;
 import java.util.ArrayList;
 import java.util.Random;
 
-public class ColonieFourmisGRASP extends CompetitorProject {
-    private static final int NB_FOURMIS = 130;
-    private static final int NB_ITERATIONS = 200;
-    private static final double TAUX_EVAPORATION = 0.5;
+public class ColonieFourmis extends CompetitorProject {
+    private static final int NB_FOURMIS = 15;
+    private static final int NB_ITERATIONS = 100;
+    private static final double TAUX_EVAPORATION = 0.35;
     private static final double Q = 100.0;
     private static final double PHEROMONE_INITIAL = 0.1;
+    private static final double ALPHA = 1.2; // Poids des phéromones
+    private static final double BETA = 5.0;  // Poids de la visibilité (1/distance)
 
     private Random random;
     private Evaluation evaluation;
     private double[][] pheromones;
+    private double[][] distances;
     private Path meilleurChemin;
     private double meilleureDistance;
 
-    public ColonieFourmisGRASP(Evaluation evaluation) throws InvalidProjectException {
+    public ColonieFourmis(Evaluation evaluation) throws InvalidProjectException {
         super(evaluation);
         this.addAuthor("Mohamed Krouchi");
         this.addAuthor("Emma Houver");
-        this.setMethodName("Colonie de fourmis + GRASP");
+        this.setMethodName("Colonie de fourmis optimisée");
         this.evaluation = evaluation;
         this.random = new Random();
     }
@@ -35,6 +38,7 @@ public class ColonieFourmisGRASP extends CompetitorProject {
     public void initialization() {
         int nbVilles = this.problem.getLength();
         initialiserPheromones(nbVilles);
+        calculerDistances(nbVilles);
         this.meilleurChemin = new Path(nbVilles);
         this.meilleureDistance = Double.MAX_VALUE;
     }
@@ -48,10 +52,19 @@ public class ColonieFourmisGRASP extends CompetitorProject {
         }
     }
 
+    private void calculerDistances(int nbVilles) {
+        distances = new double[nbVilles][nbVilles];
+        for (int i = 0; i < nbVilles; i++) {
+            for (int j = 0; j < nbVilles; j++) {
+                distances[i][j] = calculerDistance(i, j);
+            }
+        }
+    }
+
     @Override
     public void loop() {
         long startTime = System.currentTimeMillis();
-        long timeLimit = 70 * 1000; // 60 secondes en millisecondes
+        long timeLimit = 70 * 1000; // 70 secondes en millisecondes
 
         int nbVilles = this.problem.getLength();
 
@@ -65,7 +78,7 @@ public class ColonieFourmisGRASP extends CompetitorProject {
             ArrayList<Double> distancesFourmis = new ArrayList<>();
 
             for (int fourmi = 0; fourmi < NB_FOURMIS; fourmi++) {
-                CheminEtDistance resultat = construireCheminGRASP(nbVilles);
+                CheminEtDistance resultat = construireChemin(nbVilles);
                 cheminsFourmis.add(resultat.chemin);
                 distancesFourmis.add(resultat.distance);
 
@@ -83,8 +96,7 @@ public class ColonieFourmisGRASP extends CompetitorProject {
         this.evaluation.evaluate(this.meilleurChemin);
     }
 
-
-    private CheminEtDistance construireCheminGRASP(int nbVilles) {
+    private CheminEtDistance construireChemin(int nbVilles) {
         int[] chemin = new int[nbVilles];
         boolean[] visite = new boolean[nbVilles];
 
@@ -93,7 +105,7 @@ public class ColonieFourmisGRASP extends CompetitorProject {
         visite[villeCourante] = true;
 
         for (int etape = 1; etape < nbVilles; etape++) {
-            int villeSuivante = choisirVilleSuivanteGRASP(villeCourante, visite);
+            int villeSuivante = choisirVilleSuivante(villeCourante, visite);
             chemin[etape] = villeSuivante;
             visite[villeSuivante] = true;
             villeCourante = villeSuivante;
@@ -107,29 +119,40 @@ public class ColonieFourmisGRASP extends CompetitorProject {
         return new CheminEtDistance(cheminAmeliore, distanceAmelioree);
     }
 
-    private int choisirVilleSuivanteGRASP(int villeCourante, boolean[] visite) {
-        ArrayList<Integer> candidats = new ArrayList<>();
-        double minDistance = Double.MAX_VALUE, maxDistance = Double.MIN_VALUE;
+    private int choisirVilleSuivante(int villeCourante, boolean[] visite) {
+        double sommeTotal = 0.0;
+        double[] probabilites = new double[visite.length];
+
+        // 1. Calcul du dénominateur (somme totale)
+        for (int ville = 0; ville < visite.length; ville++) {
+            if (!visite[ville]) {
+                double pheromone = pheromones[villeCourante][ville];
+                double distance = distances[villeCourante][ville];
+                double visibilite = 1.0 / distance; // s[i][j]
+
+                probabilites[ville] = Math.pow(pheromone, ALPHA) * Math.pow(visibilite, BETA);
+                sommeTotal += probabilites[ville];
+            }
+        }
+
+        // 2. Normalisation et sélection par roulette
+        double randomValue = random.nextDouble() * sommeTotal;
+        double cumulativeSum = 0.0;
 
         for (int ville = 0; ville < visite.length; ville++) {
             if (!visite[ville]) {
-                double distance = calculerDistance(villeCourante, ville);
-                if (distance < minDistance) minDistance = distance;
-                if (distance > maxDistance) maxDistance = distance;
-                candidats.add(ville);
+                cumulativeSum += probabilites[ville];
+                if (cumulativeSum >= randomValue) {
+                    return ville;
+                }
             }
         }
 
-        double seuil = minDistance + 0.2 * (maxDistance - minDistance);
-        ArrayList<Integer> RCL = new ArrayList<>();
-
-        for (int ville : candidats) {
-            if (calculerDistance(villeCourante, ville) <= seuil) {
-                RCL.add(ville);
-            }
+        // Cas de secours (normalement inaccessible si le graphe est complet)
+        for (int ville = 0; ville < visite.length; ville++) {
+            if (!visite[ville]) return ville;
         }
-
-        return RCL.get(random.nextInt(RCL.size()));
+        return -1; // Erreur
     }
 
     private Path ameliorationLocale2Opt(Path chemin) {
@@ -156,8 +179,8 @@ public class ColonieFourmisGRASP extends CompetitorProject {
         int villeA = villes[i - 1], villeB = villes[i];
         int villeC = villes[j], villeD = villes[j + 1];
 
-        double ancienneDistance = calculerDistance(villeA, villeB) + calculerDistance(villeC, villeD);
-        double nouvelleDistance = calculerDistance(villeA, villeC) + calculerDistance(villeB, villeD);
+        double ancienneDistance = distances[villeA][villeB] + distances[villeC][villeD];
+        double nouvelleDistance = distances[villeA][villeC] + distances[villeB][villeD];
 
         return ancienneDistance - nouvelleDistance;
     }
