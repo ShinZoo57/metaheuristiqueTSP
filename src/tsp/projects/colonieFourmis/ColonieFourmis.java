@@ -7,16 +7,17 @@ import tsp.projects.CompetitorProject;
 import tsp.projects.InvalidProjectException;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Random;
+import java.util.Set;
 
 public class ColonieFourmis extends CompetitorProject {
-    private static final int NB_FOURMIS = 15;
-    private static final int NB_ITERATIONS = 100;
-    private static final double TAUX_EVAPORATION = 0.35;
+    private static final double TAUX_EVAPORATION = 0.40;
     private static final double Q = 100.0;
-    private static final double PHEROMONE_INITIAL = 0.1;
-    private static final double ALPHA = 1.2; // Poids des phéromones
-    private static final double BETA = 5.0;  // Poids de la visibilité (1/distance)
+    private static final double PHEROMONE_INITIAL = 0.22;
+    private static final double ALPHA = 1.5; // Poids des phéromones
+    private static final double BETA = 7.2;  // Poids de la visibilité (1/distance)
+    private int nbVilles;
 
     private Random random;
     private Evaluation evaluation;
@@ -24,6 +25,7 @@ public class ColonieFourmis extends CompetitorProject {
     private double[][] distances;
     private Path meilleurChemin;
     private double meilleureDistance;
+    private final Set<Integer> villesDepartUtilisees = new HashSet<>();
 
     public ColonieFourmis(Evaluation evaluation) throws InvalidProjectException {
         super(evaluation);
@@ -36,9 +38,9 @@ public class ColonieFourmis extends CompetitorProject {
 
     @Override
     public void initialization() {
-        int nbVilles = this.problem.getLength();
+        nbVilles = this.problem.getLength();
         initialiserPheromones(nbVilles);
-        calculerDistances(nbVilles);
+        distances = new double[nbVilles][nbVilles];
         this.meilleurChemin = new Path(nbVilles);
         this.meilleureDistance = Double.MAX_VALUE;
     }
@@ -53,68 +55,94 @@ public class ColonieFourmis extends CompetitorProject {
     }
 
     private void calculerDistances(int nbVilles) {
-        distances = new double[nbVilles][nbVilles];
         for (int i = 0; i < nbVilles; i++) {
             for (int j = 0; j < nbVilles; j++) {
-                distances[i][j] = calculerDistance(i, j);
+                Coordinates c1 = this.problem.getCoordinates(i); //ville i
+                Coordinates c2 = this.problem.getCoordinates(j); //ville j
+                distances[i][j] = c1.distance(c2);
             }
         }
     }
 
     @Override
     public void loop() {
-        long startTime = System.currentTimeMillis();
-        long timeLimit = 70 * 1000; // 70 secondes en millisecondes
+        calculerDistances(nbVilles);
 
-        int nbVilles = this.problem.getLength();
+        ArrayList<Path> cheminsFourmis = new ArrayList<>();
+        ArrayList<Double> distancesFourmis = new ArrayList<>();
 
-        for (int iteration = 0; iteration < NB_ITERATIONS; iteration++) {
-            if (System.currentTimeMillis() - startTime >= timeLimit) {
-                System.out.println("Temps écoulé : arrêt de l'algorithme.");
-                break;
+        int nb_fourmis = 35;
+
+        for (int fourmi = 0; fourmi < nb_fourmis; fourmi++) {
+            CheminEtDistance resultat = construireChemin(nbVilles);
+            cheminsFourmis.add(resultat.chemin);
+            distancesFourmis.add(resultat.distance);
+
+            if (resultat.distance < this.meilleureDistance) {
+                this.meilleureDistance = resultat.distance;
+                this.meilleurChemin = resultat.chemin;
             }
-
-            ArrayList<Path> cheminsFourmis = new ArrayList<>();
-            ArrayList<Double> distancesFourmis = new ArrayList<>();
-
-            for (int fourmi = 0; fourmi < NB_FOURMIS; fourmi++) {
-                CheminEtDistance resultat = construireChemin(nbVilles);
-                cheminsFourmis.add(resultat.chemin);
-                distancesFourmis.add(resultat.distance);
-
-                if (resultat.distance < this.meilleureDistance) {
-                    this.meilleureDistance = resultat.distance;
-                    this.meilleurChemin = resultat.chemin;
-                    this.evaluation.evaluate(this.meilleurChemin);
-                }
-            }
-
+            this.evaluation.evaluate(this.meilleurChemin);
             evaporerPheromones(nbVilles);
-            deposerPheromones(cheminsFourmis, distancesFourmis);
+        }
+    }
+
+    private int choisirVilleDepartUnique(int nbVilles) {
+        if (villesDepartUtilisees.size() >= nbVilles) {
+            villesDepartUtilisees.clear();
         }
 
-        this.evaluation.evaluate(this.meilleurChemin);
+        int ville;
+        do {
+            ville = random.nextInt(nbVilles);
+        } while (villesDepartUtilisees.contains(ville));
+
+        villesDepartUtilisees.add(ville);
+        return ville;
     }
+
 
     private CheminEtDistance construireChemin(int nbVilles) {
         int[] chemin = new int[nbVilles];
         boolean[] visite = new boolean[nbVilles];
+        double distanceTotale = 0.0;
 
-        int villeCourante = random.nextInt(nbVilles);
+        // Ville de départ
+        int villeCourante = choisirVilleDepartUnique(nbVilles);
         chemin[0] = villeCourante;
         visite[villeCourante] = true;
 
+        // Construction progressive avec mise à jour en temps réel
         for (int etape = 1; etape < nbVilles; etape++) {
             int villeSuivante = choisirVilleSuivante(villeCourante, visite);
             chemin[etape] = villeSuivante;
             visite[villeSuivante] = true;
+
+            // Mise à jour IMMÉDIATE des phéromones locales
+            double distanceSegment = distances[villeCourante][villeSuivante];
+            distanceTotale += distanceSegment;
+
+            // Dépôt progressif (méthode "Pheromone Guided")
+            double depot = (Q / nbVilles) / distanceSegment;
+            pheromones[villeCourante][villeSuivante] =
+                    Math.min(100.0, pheromones[villeCourante][villeSuivante] + depot);
+            pheromones[villeSuivante][villeCourante] = pheromones[villeCourante][villeSuivante];
+
             villeCourante = villeSuivante;
         }
 
+        // Optimisation et évaluation finale
         Path path = new Path(chemin);
-        double distance = this.evaluation.quickEvaluate(path);
         Path cheminAmeliore = ameliorationLocale2Opt(path);
         double distanceAmelioree = this.evaluation.quickEvaluate(cheminAmeliore);
+
+        // Dépôt final supplémentaire pour le meilleur chemin
+        double depotFinal = Q / distanceAmelioree;
+        int[] villes = cheminAmeliore.getPath();
+        for (int i = 0; i < villes.length - 1; i++) {
+            pheromones[villes[i]][villes[i+1]] += depotFinal;
+            pheromones[villes[i+1]][villes[i]] += depotFinal;
+        }
 
         return new CheminEtDistance(cheminAmeliore, distanceAmelioree);
     }
@@ -134,7 +162,13 @@ public class ColonieFourmis extends CompetitorProject {
                 sommeTotal += probabilites[ville];
             }
         }
-
+/*
+        for (int ville = 0; ville < visite.length; ville++) {
+            if (!visite[ville]) {
+                probabilites[ville] = probabilites[ville]/sommeTotal;
+            }
+        }
+*/
         // 2. Normalisation et sélection par roulette
         double randomValue = random.nextDouble() * sommeTotal;
         double cumulativeSum = 0.0;
@@ -146,11 +180,6 @@ public class ColonieFourmis extends CompetitorProject {
                     return ville;
                 }
             }
-        }
-
-        // Cas de secours (normalement inaccessible si le graphe est complet)
-        for (int ville = 0; ville < visite.length; ville++) {
-            if (!visite[ville]) return ville;
         }
         return -1; // Erreur
     }
@@ -201,26 +230,6 @@ public class ColonieFourmis extends CompetitorProject {
                 pheromones[i][j] *= (1.0 - TAUX_EVAPORATION);
             }
         }
-    }
-
-    private void deposerPheromones(ArrayList<Path> chemins, ArrayList<Double> distances) {
-        for (int f = 0; f < chemins.size(); f++) {
-            Path chemin = chemins.get(f);
-            double distance = distances.get(f);
-            int[] villes = chemin.getPath();
-            double quantitePheromones = Q / distance;
-
-            for (int i = 0; i < villes.length - 1; i++) {
-                pheromones[villes[i]][villes[i + 1]] += quantitePheromones;
-                pheromones[villes[i + 1]][villes[i]] += quantitePheromones;
-            }
-        }
-    }
-
-    private double calculerDistance(int ville1, int ville2) {
-        Coordinates c1 = this.problem.getCoordinates(ville1);
-        Coordinates c2 = this.problem.getCoordinates(ville2);
-        return c1.distance(c2);
     }
 
     private class CheminEtDistance {

@@ -72,6 +72,6 @@ public class Greedy extends DemoProject
 	public void loop ()
 	{
 		this.path = this.gluttonDeterministicPath(this.length);
-		this.evaluation.evaluate (this.path);
+		//this.evaluation.evaluate (this.path);
 	}
 }
